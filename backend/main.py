@@ -2,7 +2,11 @@ import cv2
 import dlib
 import numpy as np
 import os
-from time import sleep
+from flask import Flask, Response
+
+app = Flask(__name__)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
 
 # Инициализация детектора лиц и ключевых точек
 face_detector = dlib.get_frontal_face_detector()
@@ -40,7 +44,7 @@ def start_game():
     i = 0
     SCORE = 0
     ALL = len(photos)
-    wait = 50
+    wait = 30
     choose = None
     while True:
         answer1 = mini_db[photos[i]]["answer1"]
@@ -71,12 +75,20 @@ def start_game():
             cv2.putText(frame, answer1, (10, 100), cv2.FONT_HERSHEY_COMPLEX, 0.5, text_color, 2)
             cv2.putText(frame, answer2, (500, 100), cv2.FONT_HERSHEY_COMPLEX, 0.5, text_color, 2)
 
-            cv2.imshow("Head Tilt Detection", frame)
+            ret, buffer = cv2.imencode('.jpg', frame)
+
+            if not ret:
+                continue
+            frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
             if cv2.waitKey(1) & 0xFF == ord('q') or i >= ALL:
                 break
             continue
+
         elif wait == 0:
-            wait = 50
+            wait = 30
             choose = None
             text_color = (255, 255, 255)
             eye_heights_left.clear()
@@ -145,16 +157,28 @@ def start_game():
                 SCORE += 1
 
 
-        cv2.imshow("Head Tilt Detection", frame)
+        ret, buffer = cv2.imencode('.jpg', frame)
+
+        if not ret:
+            continue
+        frame_bytes = buffer.tobytes()
+        yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
         if cv2.waitKey(1) & 0xFF == ord('q') or i >= ALL:
             break
 
-    print(f"{SCORE}/{ALL}") 
+    destroy()
 
 def destroy():      
     cap.release()
     cv2.destroyAllWindows()
 
 
-start_game()
-destroy()
+@app.route("/video")
+def video_feed():
+    return Response(start_game(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True)
