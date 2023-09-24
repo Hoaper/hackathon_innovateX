@@ -1,0 +1,29 @@
+* {
+    padding: 0;
+    margin: 0;
+
+    box-sizing: border-box;
+
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+
+    overflow-x: hidden;
+
+    background: rgb(125,106,232);
+    background: linear-gradient(160deg, rgba(125,106,232,1) 0%, rgba(22,0,69,1) 100%);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-holder {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
